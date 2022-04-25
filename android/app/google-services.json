@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "580868093826",
+    "project_id": "vms--1",
+    "storage_bucket": "vms--1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:580868093826:android:ffded6999f8fb30ed9819b",
+        "android_client_info": {
+          "package_name": "com.example.vms"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "580868093826-c8i1a6q1etig34d93lj5et2vqe71b1h7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgOv-_LWbX-54grtpImnvu1riz8IdjrX4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "580868093826-c8i1a6q1etig34d93lj5et2vqe71b1h7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
