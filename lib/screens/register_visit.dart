@@ -5,14 +5,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-class RegistrationScreen extends StatefulWidget {
-  const RegistrationScreen({Key? key}) : super(key: key);
-
+class RegisterVisit extends StatefulWidget {
+  const RegisterVisit({Key? key}) : super(key: key);
   @override
-  _RegistrationScreenState createState() => _RegistrationScreenState();
+  _RegisterVisitState createState() => _RegisterVisitState();
 }
 
-class _RegistrationScreenState extends State<RegistrationScreen> {
+class _RegisterVisitState extends State<RegisterVisit> {
   final _auth = FirebaseAuth.instance;
 
   // string for displaying the error Message
