@@ -1,7 +1,7 @@
-import 'dart:ui';
 
 import 'package:vms/model/user_model.dart';
 import 'package:flutter/material.dart';
+import 'package:vms/screens/register_visit.dart';
 import '../components/banner.dart';
 import '../components/button.dart';
 
@@ -20,9 +20,11 @@ class VisitorDashboard extends StatelessWidget {
           children: <Widget>[
             const TopBanner(),
 
-            createButton("Register Visit", ()=>{}),
-            createButton("View Active Passes", ()=>{}),
-            createButton("View Previous Passes", ()=>{}),
+            makeButton("Register Visit",  ()=>{
+              Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {return RegisterVisit(); }))
+            }),
+            makeButton("View Active Passes", ()=>{}),
+            makeButton("View Previous Passes", ()=>{}),
             BottomBanner(
                 name: "${loggedInUser.firstName} ${loggedInUser.secondName}",
                 role: "Visitor"),

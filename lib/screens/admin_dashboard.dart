@@ -20,9 +20,9 @@ class AdminDashboard extends StatelessWidget {
           children: <Widget>[
             const TopBanner(),
 
-            createButton("View Active Visitors", ()=>{}),
-            createButton("View All Visitors", ()=>{}),
-            createButton("Checkout Visitor", ()=>{}),
+            makeButton("View Active Visitors", ()=>{}),
+            makeButton("View All Visitors", ()=>{}),
+            makeButton("Checkout Visitor", ()=>{}),
             BottomBanner(
                 name: "${loggedInUser.firstName} ${loggedInUser.secondName}",
                 role: "Administrator"),

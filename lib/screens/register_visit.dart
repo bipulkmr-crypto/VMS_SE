@@ -1,9 +1,16 @@
+import 'dart:ui';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import 'package:vms/components/button.dart';
 import 'package:vms/model/user_model.dart';
+import 'package:vms/components//ImageUploads.dart';
 import 'package:vms/screens/home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:uuid/uuid.dart';
+import '../model/pass_model.dart';
 
 class RegisterVisit extends StatefulWidget {
   const RegisterVisit({Key? key}) : super(key: key);
@@ -17,15 +24,18 @@ class _RegisterVisitState extends State<RegisterVisit> {
   // string for displaying the error Message
   String? errorMessage;
 
-
   // our form key
   final _formKey = GlobalKey<FormState>();
   // editing Controller
-  final firstNameEditingController = new TextEditingController();
-  final secondNameEditingController = new TextEditingController();
-  final emailEditingController = new TextEditingController();
-  final passwordEditingController = new TextEditingController();
-  final confirmPasswordEditingController = new TextEditingController();
+  final firstNameEditingController = TextEditingController();
+  final secondNameEditingController = TextEditingController();
+  final idEditingController = TextEditingController();
+  final emailEditingController = TextEditingController();
+  final contactInfoController = TextEditingController();
+  final HostemailEditingController = TextEditingController();
+  final HostNameEditingController = TextEditingController();
+  final dayInfoController = TextEditingController();
+  final venueLocationEditingController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +45,7 @@ class _RegisterVisitState extends State<RegisterVisit> {
         controller: firstNameEditingController,
         keyboardType: TextInputType.name,
         validator: (value) {
-          RegExp regex = new RegExp(r'^.{3,}$');
+          RegExp regex = RegExp(r'^.{3,}$');
           if (value!.isEmpty) {
             return ("First Name cannot be Empty");
           }
@@ -49,8 +59,8 @@ class _RegisterVisitState extends State<RegisterVisit> {
         },
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
-          prefixIcon: Icon(Icons.account_circle),
-          contentPadding: EdgeInsets.fromLTRB(20, 15, 20, 15),
+          prefixIcon: const Icon(Icons.account_circle),
+          contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
           hintText: "First Name",
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
@@ -73,9 +83,79 @@ class _RegisterVisitState extends State<RegisterVisit> {
         },
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
-          prefixIcon: Icon(Icons.account_circle),
-          contentPadding: EdgeInsets.fromLTRB(20, 15, 20, 15),
+          prefixIcon: const Icon(Icons.account_circle),
+          contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
           hintText: "Second Name",
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ));
+
+    //id
+    final Id = TextFormField(
+        autofocus: false,
+        controller: idEditingController,
+        keyboardType: TextInputType.name,
+        validator: (value) {
+          if (value!.isEmpty) {
+            return ("ID cannot be Empty");
+          }
+          return null;
+        },
+        onSaved: (value) {
+          idEditingController.text = value!;
+        },
+        textInputAction: TextInputAction.next,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.card_membership_sharp),
+          contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
+          hintText: "ID Type",
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ));
+    final HostName = TextFormField(
+        autofocus: false,
+        controller: HostNameEditingController,
+        keyboardType: TextInputType.name,
+        validator: (value) {
+          if (value!.isEmpty) {
+            return ("Host Name cannot be Empty");
+          }
+          return null;
+        },
+        onSaved: (value) {
+          HostNameEditingController.text = value!;
+        },
+        textInputAction: TextInputAction.next,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.account_circle),
+          contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
+          hintText: "Host Name",
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ));
+
+    //contact
+    final contactInfo = TextFormField(
+        autofocus: false,
+        controller: contactInfoController,
+        keyboardType: TextInputType.name,
+        validator: (value) {
+          if (value!.isEmpty) {
+            return ("Contact Info can't be empty");
+          }
+          return null;
+        },
+        onSaved: (value) {
+          contactInfoController.text = value!;
+        },
+        textInputAction: TextInputAction.next,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.phone),
+          contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
+          hintText: "Contact Information",
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
           ),
@@ -102,84 +182,90 @@ class _RegisterVisitState extends State<RegisterVisit> {
         },
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
-          prefixIcon: Icon(Icons.mail),
-          contentPadding: EdgeInsets.fromLTRB(20, 15, 20, 15),
+          prefixIcon: const Icon(Icons.mail),
+          contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
           hintText: "Email",
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
           ),
         ));
-
-    //password field
-    final passwordField = TextFormField(
+    final HostemailField = TextFormField(
         autofocus: false,
-        controller: passwordEditingController,
-        obscureText: true,
+        controller: HostemailEditingController,
+        keyboardType: TextInputType.emailAddress,
         validator: (value) {
-          RegExp regex = new RegExp(r'^.{6,}$');
           if (value!.isEmpty) {
-            return ("Password is required for login");
+            return ("Please Enter Your Email");
           }
-          if (!regex.hasMatch(value)) {
-            return ("Enter Valid Password(Min. 6 Character)");
+          // reg expression for email validation
+          if (!RegExp("^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+.[a-z]")
+              .hasMatch(value)) {
+            return ("Please Enter a valid email");
           }
+          return null;
         },
         onSaved: (value) {
           firstNameEditingController.text = value!;
         },
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
-          prefixIcon: Icon(Icons.vpn_key),
-          contentPadding: EdgeInsets.fromLTRB(20, 15, 20, 15),
-          hintText: "Password",
+          prefixIcon: const Icon(Icons.mail),
+          contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
+          hintText: "Host Email Address",
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
           ),
         ));
-
-    //confirm password field
-    final confirmPasswordField = TextFormField(
+    final VenueLocation = TextFormField(
         autofocus: false,
-        controller: confirmPasswordEditingController,
-        obscureText: true,
+        controller: venueLocationEditingController,
+        keyboardType: TextInputType.text,
         validator: (value) {
-          if (confirmPasswordEditingController.text !=
-              passwordEditingController.text) {
-            return "Password don't match";
+          if (value!.isEmpty) {
+            return ("Please Enter Your Visiting Location");
+          }
+
+          return null;
+        },
+        onSaved: (value) {
+          firstNameEditingController.text = value!;
+        },
+        textInputAction: TextInputAction.next,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.location_city_sharp),
+          contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
+          hintText: "Venue Name",
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ));
+    final days = TextFormField(
+        autofocus: false,
+        controller: dayInfoController,
+        keyboardType: TextInputType.name,
+        validator: (value) {
+          if (value!.isEmpty) {
+            return ("Days Info can't be empty");
           }
           return null;
         },
         onSaved: (value) {
-          confirmPasswordEditingController.text = value!;
+          dayInfoController.text = value!;
         },
-        textInputAction: TextInputAction.done,
+        textInputAction: TextInputAction.next,
         decoration: InputDecoration(
-          prefixIcon: Icon(Icons.vpn_key),
-          contentPadding: EdgeInsets.fromLTRB(20, 15, 20, 15),
-          hintText: "Confirm Password",
+          prefixIcon: const Icon(Icons.calendar_today_outlined),
+          contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
+          hintText: "Enter number of days",
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
           ),
         ));
 
-    //signup button
-    final signUpButton = Material(
-      elevation: 5,
-      borderRadius: BorderRadius.circular(30),
-      color: Colors.redAccent,
-      child: MaterialButton(
-          padding: EdgeInsets.fromLTRB(20, 15, 20, 15),
-          minWidth: MediaQuery.of(context).size.width,
-          onPressed: () {
-            signUp(emailEditingController.text, passwordEditingController.text);
-          },
-          child: Text(
-            "SignUp",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold),
-          )),
-    );
+    final submitButton = makeButton("Submit", () => {
+
+
+    });
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -187,7 +273,7 @@ class _RegisterVisitState extends State<RegisterVisit> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.red),
+          icon: const Icon(Icons.arrow_back, color: Colors.red),
           onPressed: () {
             // passing this to our root
             Navigator.of(context).pop();
@@ -206,25 +292,28 @@ class _RegisterVisitState extends State<RegisterVisit> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
-                    SizedBox(
-                        height: 180,
-                        child: Image.asset(
-                          "assets/logo.jpg",
-                          fit: BoxFit.contain,
-                        )),
-                    SizedBox(height: 45),
+                    UploadImage(),
+                    const SizedBox(height: 20),
                     firstNameField,
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     secondNameField,
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
+                    contactInfo,
+                    const SizedBox(height: 20),
                     emailField,
-                    SizedBox(height: 20),
-                    passwordField,
-                    SizedBox(height: 20),
-                    confirmPasswordField,
-                    SizedBox(height: 20),
-                    signUpButton,
-                    SizedBox(height: 15),
+                    const SizedBox(height: 20),
+                    Id,
+                    const SizedBox(height: 20),
+                    HostName,
+                    const SizedBox(height: 20),
+                    HostemailField,
+                    const SizedBox(height: 20),
+                    VenueLocation,
+                    const SizedBox(height: 20),
+                    days,
+                    const SizedBox(height: 20),
+                    submitButton,
+                    const SizedBox(height: 15),
                   ],
                 ),
               ),
@@ -234,6 +323,7 @@ class _RegisterVisitState extends State<RegisterVisit> {
       ),
     );
   }
+
   void signUp(String email, String password) async {
     if (_formKey.currentState!.validate()) {
       try {
@@ -248,15 +338,7 @@ class _RegisterVisitState extends State<RegisterVisit> {
           case "invalid-email":
             errorMessage = "Your email address appears to be malformed.";
             break;
-          case "wrong-password":
-            errorMessage = "Your password is wrong.";
-            break;
-          case "user-not-found":
-            errorMessage = "User with this email doesn't exist.";
-            break;
-          case "user-disabled":
-            errorMessage = "User with this email has been disabled.";
-            break;
+
           case "too-many-requests":
             errorMessage = "Too many requests";
             break;
@@ -267,36 +349,92 @@ class _RegisterVisitState extends State<RegisterVisit> {
             errorMessage = "An undefined Error happened.";
         }
         Fluttertoast.showToast(msg: errorMessage!);
-        print(error.code);
+        if (kDebugMode) {
+          print(error.code);
+        }
       }
     }
   }
+
   postDetailsToFirestore() async {
     // calling our firestore
     // calling our user model
-    // sedning these values
-
+    // sending these values
     FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
     User? user = _auth.currentUser;
-
-    UserModel userModel = UserModel();
-
+    // UserModel userModel = UserModel();
     // writing all the values
-    userModel.email = user!.email;
-    userModel.uid = user.uid;
-    userModel.firstName = firstNameEditingController.text;
-    userModel.secondName = secondNameEditingController.text;
-    userModel.admin = false;
-
+    var uuid=const Uuid();
+    PassModel passModel=PassModel();
+    passModel.email = user!.email;
+    passModel.uid =user.uid;
+    passModel.firstName = firstNameEditingController.text;
+    passModel.secondName = secondNameEditingController.text;
+    passModel.contactInfo=contactInfoController.text;
+    passModel.idType=idEditingController.text;
+    passModel.days=dayInfoController.value as int?;
+    passModel.hostName=HostNameEditingController.text;
+    passModel.hostEmail=HostemailEditingController.text;
+    passModel.location=venueLocationEditingController.text;
     await firebaseFirestore
         .collection("users")
         .doc(user.uid)
-        .set(userModel.toMap());
-    Fluttertoast.showToast(msg: "Account created successfully :) ");
-
+        .set(passModel.toMap());
+    Fluttertoast.showToast(msg: "Pass created successfully :) ");
     Navigator.pushAndRemoveUntil(
         (context),
-        MaterialPageRoute(builder: (context) => HomeScreen()),
-            (route) => false);
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false);
   }
 }
+//add in line 144
+
+// Container(
+// padding: const EdgeInsets.all(16),
+// child: DropDownFormField(
+// titleText: 'My workout',
+// hintText: 'Please choose one',
+// // onSaved: (value) {
+// //   setState(() {
+// //     _myActivity = value;
+// //   });
+// // },
+// // onChanged: (value) {
+// //   setState(() {
+// //     _myActivity = value;
+// //   });
+// // },
+// dataSource: const [
+// {
+// "display": "Aadhar Card",
+// "value": "1",
+// },
+// {
+// "display": "Passport",
+// "value": "2",
+// },
+// {
+// "display": "College Id Card",
+// "value": "3",
+// },
+// {
+// "display": "Driving License",
+// "value": "4",
+// },
+// // {
+// //   "display": "Soccer Practice",
+// //   "value": "Soccer Practice",
+// // },
+// // {
+// //   "display": "Baseball Practice",
+// //   "value": "Baseball Practice",
+// // },
+// // {
+// //   "display": "Football Practice",
+// //   "value": "Football Practice",
+// // },
+// ],
+// textField: 'display',
+// valueField: 'value',
+// ),
+// ),

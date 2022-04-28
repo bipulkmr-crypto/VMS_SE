@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-Widget createButton(String text,void Function() onPress) {
+Widget makeButton(String text,void Function() onPress) {
   return  Padding(
       padding: const EdgeInsets.all(30),
       child: Material(

@@ -48,8 +48,13 @@ dev_dependencies:
   firebase_core: ^1.14.1
   firebase_analytics: ^9.1.5
   firebase_auth: ^3.3.14
+  firebase_storage: ^10.2.13
   cloud_firestore: ^3.1.12
   fluttertoast: ^8.0.9
+  path: ^1.8.0
+  image_picker: ^0.8.5
+  uuid: ^3.0.6
+#  dropdown_formfield: ^0.1.4
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
