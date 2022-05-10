@@ -54,6 +54,7 @@ dev_dependencies:
   path: ^1.8.0
   image_picker: ^0.8.5
   uuid: ^3.0.6
+  flutter_spinkit: ^5.1.0
 #  dropdown_formfield: ^0.1.4
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

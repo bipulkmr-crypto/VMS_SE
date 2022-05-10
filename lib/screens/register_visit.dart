@@ -1,16 +1,18 @@
-import 'dart:ui';
+import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:vms/components/button.dart';
-import 'package:vms/model/user_model.dart';
-import 'package:vms/components//ImageUploads.dart';
-import 'package:vms/screens/home_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:vms/components/button.dart';
+import 'package:vms/model/pass_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
-import '../model/pass_model.dart';
+import 'package:vms/screens/pass_screen.dart';
+import 'package:http/http.dart' as http;
+
+import '../secret.dart';
 
 class RegisterVisit extends StatefulWidget {
   const RegisterVisit({Key? key}) : super(key: key);
@@ -20,29 +22,85 @@ class RegisterVisit extends StatefulWidget {
 
 class _RegisterVisitState extends State<RegisterVisit> {
   final _auth = FirebaseAuth.instance;
+  firebase_storage.FirebaseStorage storage =
+      firebase_storage.FirebaseStorage.instance;
+
+  File? photo;
+  final ImagePicker _picker = ImagePicker();
 
   // string for displaying the error Message
   String? errorMessage;
 
+  String idTypeSelected = "Aadhaar";
+
   // our form key
   final _formKey = GlobalKey<FormState>();
   // editing Controller
-  final firstNameEditingController = TextEditingController();
-  final secondNameEditingController = TextEditingController();
+  final nameEditingController = TextEditingController();
   final idEditingController = TextEditingController();
   final emailEditingController = TextEditingController();
   final contactInfoController = TextEditingController();
-  final HostemailEditingController = TextEditingController();
-  final HostNameEditingController = TextEditingController();
+  final hostEmailEditingController = TextEditingController();
+  final hostNameEditingController = TextEditingController();
   final dayInfoController = TextEditingController();
   final venueLocationEditingController = TextEditingController();
+
+  Future getImage(ImageSource source) async {
+    final pickedFile = await _picker.pickImage(source: source);
+    if (pickedFile != null) {
+      setState(() {
+        {
+          photo = File(pickedFile.path);
+        }
+      });
+    }
+  }
+
+  Future uploadFile(String name) async {
+    if (photo == null) return;
+    try {
+      await storage.ref(name).putFile(photo!);
+    } catch (e) {
+      if (kDebugMode) {
+        print('error occurred');
+      }
+    }
+  }
+
+  void _showPicker(context) {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext bc) {
+          return SafeArea(
+            child: Wrap(
+              children: <Widget>[
+                ListTile(
+                    leading: const Icon(Icons.photo_library),
+                    title: const Text('Gallery'),
+                    onTap: () {
+                      getImage(ImageSource.gallery);
+                      Navigator.of(context).pop();
+                    }),
+                ListTile(
+                  leading: const Icon(Icons.photo_camera),
+                  title: const Text('Camera'),
+                  onTap: () {
+                    getImage(ImageSource.camera);
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+          );
+        });
+  }
 
   @override
   Widget build(BuildContext context) {
     //first name field
-    final firstNameField = TextFormField(
+    final nameField = TextFormField(
         autofocus: false,
-        controller: firstNameEditingController,
+        controller: nameEditingController,
         keyboardType: TextInputType.name,
         validator: (value) {
           RegExp regex = RegExp(r'^.{3,}$');
@@ -55,44 +113,63 @@ class _RegisterVisitState extends State<RegisterVisit> {
           return null;
         },
         onSaved: (value) {
-          firstNameEditingController.text = value!;
+          nameEditingController.text = value!;
         },
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
           prefixIcon: const Icon(Icons.account_circle),
           contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
-          hintText: "First Name",
+          hintText: "Name",
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
           ),
         ));
 
-    //second name field
-    final secondNameField = TextFormField(
-        autofocus: false,
-        controller: secondNameEditingController,
-        keyboardType: TextInputType.name,
-        validator: (value) {
-          if (value!.isEmpty) {
-            return ("Second Name cannot be Empty");
-          }
-          return null;
-        },
-        onSaved: (value) {
-          secondNameEditingController.text = value!;
-        },
-        textInputAction: TextInputAction.next,
-        decoration: InputDecoration(
-          prefixIcon: const Icon(Icons.account_circle),
-          contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
-          hintText: "Second Name",
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
+    Widget idTypeField = Container(
+        padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.grey,
           ),
-        ));
+          borderRadius: BorderRadius.circular(10),
+        ),
+        // decoration: InputDecoration(
+        //   prefixIcon: const Icon(Icons.calendar_today_outlined),
+        //   contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
+        //   hintText: "Enter number of days",
+        //   border: OutlineInputBorder(
+        //     borderRadius: BorderRadius.circular(10),
+        //   ),
+        child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: <Widget>[
+              const Icon(Icons.account_circle, color: Colors.grey),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: DropdownButton<String>(
+                isExpanded: true,
+                value: idTypeSelected,
+                elevation: 16,
+                underline: Container(
+                  height: 2,
+                ),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    idTypeSelected = newValue ?? "Aadhaar";
+                  });
+                },
+                items: <String>["Aadhaar", "Driving License", "PAN", "Voter ID"]
+                    .map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+              ))
+            ]));
 
     //id
-    final Id = TextFormField(
+    final idField = TextFormField(
         autofocus: false,
         controller: idEditingController,
         keyboardType: TextInputType.name,
@@ -109,14 +186,15 @@ class _RegisterVisitState extends State<RegisterVisit> {
         decoration: InputDecoration(
           prefixIcon: const Icon(Icons.card_membership_sharp),
           contentPadding: const EdgeInsets.fromLTRB(20, 15, 20, 15),
-          hintText: "ID Type",
+          hintText: "ID",
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
           ),
         ));
-    final HostName = TextFormField(
+
+    final hostName = TextFormField(
         autofocus: false,
-        controller: HostNameEditingController,
+        controller: hostNameEditingController,
         keyboardType: TextInputType.name,
         validator: (value) {
           if (value!.isEmpty) {
@@ -125,7 +203,7 @@ class _RegisterVisitState extends State<RegisterVisit> {
           return null;
         },
         onSaved: (value) {
-          HostNameEditingController.text = value!;
+          hostNameEditingController.text = value!;
         },
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
@@ -141,15 +219,16 @@ class _RegisterVisitState extends State<RegisterVisit> {
     final contactInfo = TextFormField(
         autofocus: false,
         controller: contactInfoController,
-        keyboardType: TextInputType.name,
+        keyboardType: TextInputType.number,
         validator: (value) {
+          RegExp regex = RegExp(r'^.{10,}$');
           if (value!.isEmpty) {
-            return ("Contact Info can't be empty");
+            return ("Phone Number is required for Pass");
+          }
+          if (!regex.hasMatch(value)) {
+            return ("Enter Valid Phone number");
           }
           return null;
-        },
-        onSaved: (value) {
-          contactInfoController.text = value!;
         },
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
@@ -178,7 +257,7 @@ class _RegisterVisitState extends State<RegisterVisit> {
           return null;
         },
         onSaved: (value) {
-          firstNameEditingController.text = value!;
+          nameEditingController.text = value!;
         },
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
@@ -189,23 +268,22 @@ class _RegisterVisitState extends State<RegisterVisit> {
             borderRadius: BorderRadius.circular(10),
           ),
         ));
-    final HostemailField = TextFormField(
+    final hostEmailField = TextFormField(
         autofocus: false,
-        controller: HostemailEditingController,
+        controller: hostEmailEditingController,
         keyboardType: TextInputType.emailAddress,
         validator: (value) {
           if (value!.isEmpty) {
             return ("Please Enter Your Email");
           }
           // reg expression for email validation
-          if (!RegExp("^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+.[a-z]")
-              .hasMatch(value)) {
-            return ("Please Enter a valid email");
+          if (!RegExp(r"^[a-zA-Z0-9+_.-]+@iiita\.ac\.in").hasMatch(value)) {
+            return ("Please Enter a valid email of domain iiita.ac.in");
           }
           return null;
         },
         onSaved: (value) {
-          firstNameEditingController.text = value!;
+          nameEditingController.text = value!;
         },
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
@@ -216,7 +294,7 @@ class _RegisterVisitState extends State<RegisterVisit> {
             borderRadius: BorderRadius.circular(10),
           ),
         ));
-    final VenueLocation = TextFormField(
+    final venueLocation = TextFormField(
         autofocus: false,
         controller: venueLocationEditingController,
         keyboardType: TextInputType.text,
@@ -228,7 +306,7 @@ class _RegisterVisitState extends State<RegisterVisit> {
           return null;
         },
         onSaved: (value) {
-          firstNameEditingController.text = value!;
+          nameEditingController.text = value!;
         },
         textInputAction: TextInputAction.next,
         decoration: InputDecoration(
@@ -242,7 +320,7 @@ class _RegisterVisitState extends State<RegisterVisit> {
     final days = TextFormField(
         autofocus: false,
         controller: dayInfoController,
-        keyboardType: TextInputType.name,
+        keyboardType: TextInputType.number,
         validator: (value) {
           if (value!.isEmpty) {
             return ("Days Info can't be empty");
@@ -262,18 +340,47 @@ class _RegisterVisitState extends State<RegisterVisit> {
           ),
         ));
 
-    final submitButton = makeButton("Submit", () => {
-
-
-    });
+    final uploadImage = Center(
+      child: GestureDetector(
+        onTap: () {
+          _showPicker(context);
+        },
+        child: CircleAvatar(
+          radius: 55,
+          backgroundColor: const Color(0xffFDCF09),
+          child: photo != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(50),
+                  child: Image.file(
+                    photo!,
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.fill,
+                  ),
+                )
+              : Container(
+                  decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(50)),
+                  width: 100,
+                  height: 100,
+                  child: Icon(
+                    Icons.camera_alt,
+                    color: Colors.grey[800],
+                  ),
+                ),
+        ),
+      ),
+    );
+    final submitButton = makeButton("Submit", submit);
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.red,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.red),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             // passing this to our root
             Navigator.of(context).pop();
@@ -292,23 +399,23 @@ class _RegisterVisitState extends State<RegisterVisit> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
-                    UploadImage(),
+                    uploadImage,
                     const SizedBox(height: 20),
-                    firstNameField,
-                    const SizedBox(height: 20),
-                    secondNameField,
+                    nameField,
                     const SizedBox(height: 20),
                     contactInfo,
                     const SizedBox(height: 20),
                     emailField,
                     const SizedBox(height: 20),
-                    Id,
+                    idTypeField,
                     const SizedBox(height: 20),
-                    HostName,
+                    idField,
                     const SizedBox(height: 20),
-                    HostemailField,
+                    hostName,
                     const SizedBox(height: 20),
-                    VenueLocation,
+                    hostEmailField,
+                    const SizedBox(height: 20),
+                    venueLocation,
                     const SizedBox(height: 20),
                     days,
                     const SizedBox(height: 20),
@@ -324,35 +431,14 @@ class _RegisterVisitState extends State<RegisterVisit> {
     );
   }
 
-  void signUp(String email, String password) async {
+  void submit() {
     if (_formKey.currentState!.validate()) {
-      try {
-        await _auth
-            .createUserWithEmailAndPassword(email: email, password: password)
-            .then((value) => {postDetailsToFirestore()})
-            .catchError((e) {
-          Fluttertoast.showToast(msg: e!.message);
-        });
-      } on FirebaseAuthException catch (error) {
-        switch (error.code) {
-          case "invalid-email":
-            errorMessage = "Your email address appears to be malformed.";
-            break;
-
-          case "too-many-requests":
-            errorMessage = "Too many requests";
-            break;
-          case "operation-not-allowed":
-            errorMessage = "Signing in with Email and Password is not enabled.";
-            break;
-          default:
-            errorMessage = "An undefined Error happened.";
-        }
-        Fluttertoast.showToast(msg: errorMessage!);
-        if (kDebugMode) {
-          print(error.code);
-        }
-      }
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Uploading'), backgroundColor: Colors.blue));
+      postDetailsToFirestore();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Errors in form'), backgroundColor: Colors.red));
     }
   }
 
@@ -362,79 +448,51 @@ class _RegisterVisitState extends State<RegisterVisit> {
     // sending these values
     FirebaseFirestore firebaseFirestore = FirebaseFirestore.instance;
     User? user = _auth.currentUser;
-    // UserModel userModel = UserModel();
-    // writing all the values
-    var uuid=const Uuid();
-    PassModel passModel=PassModel();
+
+    PassModel passModel = PassModel();
+    var uuid = const Uuid();
+    passModel.passSecret = uuid.v1();
+    passModel.userId = user?.uid;
     passModel.email = user!.email;
-    passModel.uid =user.uid;
-    passModel.firstName = firstNameEditingController.text;
-    passModel.secondName = secondNameEditingController.text;
-    passModel.contactInfo=contactInfoController.text;
-    passModel.idType=idEditingController.text;
-    passModel.days=dayInfoController.value as int?;
-    passModel.hostName=HostNameEditingController.text;
-    passModel.hostEmail=HostemailEditingController.text;
-    passModel.location=venueLocationEditingController.text;
+    passModel.name = nameEditingController.text;
+    passModel.contactInfo = contactInfoController.text;
+    passModel.idType = idTypeSelected;
+    passModel.idValue = idEditingController.text;
+    passModel.days = int.parse(dayInfoController.text);
+    passModel.hostName = hostNameEditingController.text;
+    passModel.hostEmail = hostEmailEditingController.text;
+    passModel.location = venueLocationEditingController.text;
+    passModel.isActive = false;
+    passModel.isVerified = false;
+
     await firebaseFirestore
-        .collection("users")
-        .doc(user.uid)
-        .set(passModel.toMap());
-    Fluttertoast.showToast(msg: "Pass created successfully :) ");
-    Navigator.pushAndRemoveUntil(
-        (context),
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-        (route) => false);
+        .collection("passes")
+        .add(passModel.toMap())
+        .then((value) => {passModel.uid = value.id});
+
+    await Future.wait([
+      firebaseFirestore.collection("users").doc(user.uid).update({
+        'passes': FieldValue.arrayUnion([passModel.uid!])
+      }),
+      uploadFile(passModel.uid!),
+      http.post(Uri.parse('https://vms-iiita.herokuapp.com/send_email'),
+          headers: <String, String>{
+            'Authorization': emailAuthToken,
+          },
+          body: <String, String>{
+            'name': passModel.name ?? 'error',
+            'secret': passModel.uid ?? "error",
+            'email': passModel.hostEmail ?? "error"
+          })
+    ]);
+
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Pass created successfully!"),
+        backgroundColor: Colors.green));
+
+
+    Navigator.push(context, MaterialPageRoute(builder: (BuildContext context) {
+      return PassScreen(passModel);
+    }));
   }
 }
-//add in line 144
-
-// Container(
-// padding: const EdgeInsets.all(16),
-// child: DropDownFormField(
-// titleText: 'My workout',
-// hintText: 'Please choose one',
-// // onSaved: (value) {
-// //   setState(() {
-// //     _myActivity = value;
-// //   });
-// // },
-// // onChanged: (value) {
-// //   setState(() {
-// //     _myActivity = value;
-// //   });
-// // },
-// dataSource: const [
-// {
-// "display": "Aadhar Card",
-// "value": "1",
-// },
-// {
-// "display": "Passport",
-// "value": "2",
-// },
-// {
-// "display": "College Id Card",
-// "value": "3",
-// },
-// {
-// "display": "Driving License",
-// "value": "4",
-// },
-// // {
-// //   "display": "Soccer Practice",
-// //   "value": "Soccer Practice",
-// // },
-// // {
-// //   "display": "Baseball Practice",
-// //   "value": "Baseball Practice",
-// // },
-// // {
-// //   "display": "Football Practice",
-// //   "value": "Football Practice",
-// // },
-// ],
-// textField: 'display',
-// valueField: 'value',
-// ),
-// ),

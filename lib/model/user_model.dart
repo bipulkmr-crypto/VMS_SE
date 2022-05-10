@@ -17,7 +17,6 @@ class UserModel {
       admin: map['admin'] ?? false,
     );
   }
-
   // sending data to our server
   Map<String, dynamic> toMap() {
     return {
@@ -26,7 +25,6 @@ class UserModel {
       'firstName': firstName,
       'secondName': secondName,
       'admin' : admin,
-
     };
   }
 }
